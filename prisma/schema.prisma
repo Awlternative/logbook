@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  MEMBER
+  SUPERVISOR
+  ADMIN
+}
+
+enum LogVisibility {
+  PRIVATE      
+  ORGANIZATION
+}
+
+enum LogStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+model User {
+  id           String               @id @default(uuid())
+  email        String               @unique
+  name         String
+  password     String
+  role         Role                 @default(MEMBER)
+  logs         LogEntry[]
+  comments     LogComment[]
+  memberships  OrganizationMember[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+}
+
+model Organization {
+  id          String               @id @default(uuid())
+  name        String
+  description String?
+  members     OrganizationMember[]
+  logs        LogEntry[]
+  createdAt   DateTime             @default(now())
+}
+
+model OrganizationMember {
+  id             String       @id @default(uuid())
+  userId         String
+  organizationId String
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model LogEntry {
+  id             String        @id @default(uuid())
+  title          String
+  content        String
+  category       String?       
+  status         LogStatus     @default(COMPLETED)
+  visibility     LogVisibility @default(PRIVATE)
+  loggedAt       DateTime      @default(now())
+  duration       Int?          
+
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  comments       LogComment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model LogComment {
+  id         String   @id @default(uuid())
+  comment    String
+  logEntryId String
+  logEntry   LogEntry @relation(fields: [logEntryId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+}
